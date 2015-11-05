@@ -1,0 +1,142 @@
+import de.fhpotsdam.unfolding.mapdisplay.*;
+import de.fhpotsdam.unfolding.utils.*;
+import de.fhpotsdam.unfolding.marker.*;
+import de.fhpotsdam.unfolding.tiles.*;
+import de.fhpotsdam.unfolding.interactions.*;
+import de.fhpotsdam.unfolding.ui.*;
+import de.fhpotsdam.unfolding.*;
+import de.fhpotsdam.unfolding.core.*;
+import de.fhpotsdam.unfolding.mapdisplay.shaders.*;
+import de.fhpotsdam.unfolding.data.*;
+import de.fhpotsdam.unfolding.geo.*;
+import de.fhpotsdam.unfolding.texture.*;
+import de.fhpotsdam.unfolding.events.*;
+import de.fhpotsdam.utils.*;
+import de.fhpotsdam.unfolding.providers.*;
+
+UnfoldingMap map;
+
+//create an array list to store your protests objects
+ArrayList <Protest> protests = new ArrayList<Protest>();
+Timeline t;
+
+public void setup() {
+  size(1000, 700, P2D);
+  noStroke();
+  t = new Timeline();
+
+  map = new UnfoldingMap(this, new StamenMapProvider.Toner());
+  map.setTweening(false);
+  map.zoomToLevel(2);
+  map.panTo(new Location(40f, 8f));
+  MapUtils.createDefaultEventDispatcher(this, map);
+
+  //load the data
+  Table table = loadTable("new_data.csv", "header");
+  for (int i = 0; i<table.getRowCount (); i++) {
+
+    TableRow row = table.getRow(i);
+
+    //create a new Protest object
+    Protest p = new Protest();
+
+    //assign your variables in your new Protest
+    p.year = row.getString("MonthYear");
+    float lat = row.getFloat("ActionGeo_Lat");
+    float lon = row.getFloat("ActionGeo_Long");
+    int counts = row.getInt("c");
+
+    //    p.c = new Counts();
+    p.l = new Location(lat, lon);
+    p.d = map(counts/10, 0, 300, 0, 50);
+    //    println("In" + p.year +"," + counts + " protests took place at " + lat + "," + lon);
+
+    //add protest to array list
+    protests.add(p);
+  } 
+  println(protests.size());
+}
+
+public void draw() {
+  background(0);
+
+  map.draw();
+
+  //iterate through all protests in your array list
+  for (Protest p : protests) {
+    //if the year of the protest is found in the current year the timeline is on
+    //    if (p.year=t.year) {
+    String eachYear = (p.year).substring(0, 4);
+
+
+    //    if (eachYear.indexOf(t.year) != -1) {
+    if (int(eachYear) == t.year) {
+      ScreenPosition posProtest = map.getScreenPosition(p.l);
+      float s = map.getZoom();
+      p.display(posProtest.x, posProtest.y);
+    }
+  }
+  //draw the protests at the latitudes and longitudes using ScreenPosition
+  //as well as the display() function in your Protest class
+  //println(p.year);
+
+  //draw the timeline
+  t.timeline();
+
+  PFont f1;
+  f1 = createFont("Arial", 20);
+  stroke(100);
+  //  text(p.c, 20, height-50);
+  text(protests.size()+" Protests (1979 ~ 2015) ", 20, height-50);
+}
+
+class Protest {
+  String year;
+  float d;
+
+  //  Counts c;
+  Location l;
+
+  Protest() {
+  }
+
+  void display(float x, float y) {
+
+    noStroke();
+    fill(255, 0, 0, 150);
+    
+    ellipse(x, y, d*2.6, d*2.6);
+   
+  }
+}
+
+class Timeline {
+  int year;
+  PFont f;
+
+
+
+  Timeline() {
+    f = createFont("Georgia", 60);
+    
+  }
+  void timeline() {
+    //timeline test
+    stroke(#FF3333);
+    line(mouseX, 0, mouseX, height); 
+
+    float y = map(mouseX, 0, width, 1979, 2015);
+    year = round(y);
+
+    if ((mouseX+200)>width) {
+      noStroke();
+      textFont(f);
+      text(year, mouseX-180, 60);
+    } else {
+      noStroke();
+      textFont(f);
+      text(year, mouseX+5, 60);
+    }
+  }
+}
+
