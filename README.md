@@ -1,1 +1,1 @@
-# World-Protest-project-with-GDELT-database
+# World-Protest-GDELT-database
